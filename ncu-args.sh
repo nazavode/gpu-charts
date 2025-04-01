@@ -11,4 +11,4 @@ fi
 cfg="${1:-${THIS}/metrics.cfg}"
 metrics=$(cut -f1 -d\# ${cfg} | xargs | tr ' ' ',')
 
-echo "--csv --metrics='${metrics}'"
+echo "--csv --metrics=${metrics}"
