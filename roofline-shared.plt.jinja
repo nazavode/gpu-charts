@@ -14,8 +14,10 @@ set y2data
 set boxwidth
 set style fill  empty border
 set dummy x,y
+{% raw %}
 set format y "10^{%T}"
 set format x "10^{%T}"
+{% endraw %}
 set format x2 "% g"
 set format y2 "% g"
 set format z "% g"
@@ -46,7 +48,7 @@ set samples 1000, 1000
 set isosamples 10, 10
 set surface
 unset contour
-set clabel '%8.3g'
+# set clabel '%8.3g'
 set mapping cartesian
 set datafile separator whitespace
 unset hidden3d
@@ -121,10 +123,6 @@ point_size = 1.5
 
 shared_color = 'magenta'
 
-ClassA_point = 5
-ClassB_point = 9
-ClassC_point = 7
-
 # Ceiling labels
 set label sprintf('Theoretical peak: %.1f warp GIPS', peak) at 2,peak + 90 textcolor rgb 'black' font ",12"
 set label sprintf('Shared %.1f GTXN/s', shared_peak) at 0.05,1 + 0.05 * shared_peak  left rotate by 50 textcolor rgb shared_color font ",12"
@@ -139,15 +137,22 @@ fullconflict = 1 / 32.
 set arrow from fullconflict,1 to fullconflict,fullconflict*shared_peak nohead lc rgb shared_color
 set label '32-way bank conflict' at fullconflict-0.005,1 left rotate by 90 textcolor rgb shared_color font ",12"
 
+# Define dot shapes for each kernel
+{% set shape = namespace(value=5) %}
+{% for kernel in kernels %}
+{{ kernel.name }}_dot = {{ shape.value }}
+{% set shape.value = shape.value + 2 %}
+{% endfor %}
+
 plot \
 	shared_ceiling(x) lw line_width lc rgb shared_color notitle,\
 	peak_ceiling(x) lw line_width lc rgb 'black' notitle,\
-	[0:0:1] "+" us (-10):(-10) \
-		with points lc rgb "black" pt ClassA_point-1 ps point_size title 'Small',\
-	[0:0:1] "+" us (-10):(-10) \
-		with points lc rgb 'black' pt ClassB_point-1 ps point_size title 'Medium',\
-	[0:0:1] "+" us (-10):(-10) \
-		with points lc rgb 'black' pt ClassC_point-1 ps point_size title 'Large',\
-	[0:0:1] "+" us (ClassA_shared_warp_inst_intensity):(ClassA_warp_shared_instruction_performance) with points lc rgb shared_color pt ClassA_point ps point_size title "Shared (ldst\\\_inst)",\
-	[0:0:1] "+" us (ClassB_shared_warp_inst_intensity):(ClassB_warp_shared_instruction_performance) with points lc rgb shared_color pt ClassB_point ps point_size notitle,\
-	[0:0:1] "+" us (ClassC_shared_warp_inst_intensity):(ClassC_warp_shared_instruction_performance) with points lc rgb shared_color pt ClassC_point ps point_size notitle
+	{% for kernel in kernels %}
+	[0:0:1] "+" us (-10):(-10)\
+		with points lc rgb "black" pt {{ kernel.name }}_dot - 1 ps point_size title "{{ kernel.name }}",\
+	{% endfor %}
+    {% for kernel in kernels %}
+	[0:0:1] "+" us ({{ kernel.shared_warp_inst_intensity }}):({{ kernel.warp_shared_instruction_performance }})\
+	    with points lc rgb shared_color pt {{ kernel.name }}_dot ps point_size\
+		title {{ '"Shared (ldst\\\_inst)"' if loop.first else "notitle" }}{% if not loop.last %},\{% endif %}
+	{% endfor %}

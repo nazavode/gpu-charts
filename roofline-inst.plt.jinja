@@ -1,4 +1,4 @@
-if (!exists("outfile")) outfile='roofline-fp.ps'
+if (!exists("outfile")) outfile='roofline-inst.ps'
 set term postscript solid color rounded
 set output outfile
 
@@ -14,8 +14,10 @@ set y2data
 set boxwidth
 set style fill  empty border
 set dummy x,y
+{% raw %}
 set format y "10^{%T}"
 set format x "10^{%T}"
+{% endraw %}
 set format x2 "% g"
 set format y2 "% g"
 set format z "% g"
@@ -46,7 +48,7 @@ set samples 1000, 1000
 set isosamples 10, 10
 set surface
 unset contour
-set clabel '%8.3g'
+# set clabel '%8.3g'
 set mapping cartesian
 set datafile separator whitespace
 unset hidden3d
@@ -81,13 +83,13 @@ set rrange [ * : * ] noreverse nowriteback
 set trange [ * : * ] noreverse nowriteback
 set urange [ * : * ] noreverse nowriteback
 set vrange [ * : * ] noreverse nowriteback
-set xlabel "Arithmetic Intensity (FLOP/B)"
+set xlabel "Instruction Intensity (warp instructions per transaction)" 
 set x2label "" 
-set xrange [1.000000e-02 : 2.00000e+02] noreverse nowriteback
+set xrange [1.000000e-02 : 1.500000e+03] noreverse nowriteback
 set x2range [ * : * ] noreverse nowriteback
-set ylabel "Performance (GFLOP/s)"
+set ylabel "Performance (warp GIPS)"
 set y2label "" 
-set yrange [1.000000e+01 : *] noreverse nowriteback
+set yrange [1.000000e+00 : 1.000000e+03] noreverse nowriteback
 set y2range [ * : * ] noreverse nowriteback
 set zlabel "" 
 set zrange [ * : * ] noreverse nowriteback
@@ -107,16 +109,12 @@ set colorbox default
 set loadpath 
 set fit noerrorvariables
 
-# Device parameters
-peak = 6681.6 # GFLOP/s
-peak_nofma = peak / 2 # GFLOP/s
-l2_peak = 2842.3 # GB/s
-hbm_peak = 796.2 # GB/s
-
+# Device parameters: NVIDIA V100
 peak = 80 * 32 * 2 * 1.53 # GFLOP/s
-l1_peak = 437.5 * 32 # GFLOP/s
-l2_peak = 93.6 * 32 # GFLOP/s
-hbm_peak = 25.9 * 32 # GFLOP/s
+peak_nofma = peak / 2 # GFLOP/s
+l1_peak = 437.5 * 32 # GB/s
+l2_peak = 93.6 * 32 # GB/s
+hbm_peak = 25.9 * 32 # GB/s
 
 # Ceilings
 l1_ceiling(x) = peak > (x * l1_peak) ? (x * l1_peak) : peak
@@ -129,39 +127,42 @@ peak_nofma_ceiling(x) = peak_nofma <= (x * l1_peak) ? peak_nofma : 1/0
 line_width = 2
 point_size = 1.5
 
-hbm_color = '#74460b'
-l1_color = '#eaa800'
-l2_color = '#14967c'
-
-ClassA_point = 5
-ClassB_point = 9
-ClassC_point = 7
+l1_color = 'red'
+l2_color = 'green'
+hbm_color = 'blue'
 
 # Ceiling labels
-set label sprintf('Theoretical peak \@ FP64: %.1f GFLOP/s', peak) at 2,peak+1000 textcolor rgb 'black' font ",12"
-set label 'FMA' at 180,peak_nofma+500 right textcolor rgb 'black' font ",12"
-set label sprintf('L1 %.1f GB/s', l1_peak) at 0.05,100 + 0.05 * l1_peak left rotate by 45 textcolor rgb l1_color font ",12"
-set label sprintf('L2 %.1f GB/s', l2_peak) at 0.05,20 + 0.05 * l2_peak left rotate by 45 textcolor rgb l2_color font ",12"
-set label sprintf('HBM %.1f GB/s', hbm_peak)  at 0.05,5 + 0.05 * hbm_peak left rotate by 45 textcolor rgb hbm_color font ",12"
+set label 'Theoretical peak: 489.6 warp GIPS' at 2,peak + 90 textcolor rgb 'black' font ",12"
+set label sprintf('L1 %.1f GTXN/s', l1_peak) at 0.05,4 + 0.05 * l1_peak  left rotate by 50 textcolor rgb l1_color font ",12"
+set label sprintf('L2 %.1f GTXN/s', l2_peak)  at 0.05,0.6 + 0.05 * l2_peak  left rotate by 50 textcolor rgb l2_color font ",12"
+set label sprintf('HBM %.1f GTXN/s', hbm_peak) at 0.05,0.2 + 0.05 * hbm_peak left rotate by 50 textcolor rgb hbm_color font ",12"
+
+# Define dot shapes for each kernel
+{% set shape = namespace(value=5) %}
+{% for kernel in kernels %}
+{{ kernel.name }}_dot = {{ shape.value }}
+{% set shape.value = shape.value + 2 %}
+{% endfor %}
 
 plot \
 	l1_ceiling(x) lw line_width lc rgb l1_color notitle,\
 	l2_ceiling(x) lw line_width lc rgb l2_color notitle,\
 	hbm_ceiling(x) lw line_width lc rgb hbm_color notitle,\
 	peak_ceiling(x) lw line_width lc rgb 'black' notitle,\
-	peak_nofma_ceiling(x) lw line_width lc rgb 'black' dashtype 2 notitle,\
-	[0:0:1] "+" us (-10):(-10) \
-		with points lc rgb "black" pt ClassA_point - 1 ps point_size title 'Small',\
-	[0:0:1] "+" us (-10):(-10) \
-		with points lc rgb 'black' pt ClassB_point - 1 ps point_size title 'Medium',\
-	[0:0:1] "+" us (-10):(-10) \
-		with points lc rgb 'black' pt ClassC_point - 1 ps point_size title 'Large',\
-	[0:0:1] "+" us (ClassA_l1_thread_fp_intensity):(ClassA_thread_fp_performance) with points lc rgb l1_color pt ClassA_point ps point_size title "L1",\
-	[0:0:1] "+" us (ClassA_l2_thread_fp_intensity):(ClassA_thread_fp_performance) with points lc rgb l2_color pt ClassA_point ps point_size title "L2",\
-	[0:0:1] "+" us (ClassA_hbm_thread_fp_intensity):(ClassA_thread_fp_performance) with points lc rgb hbm_color pt ClassA_point ps point_size title "HBM",\
-	[0:0:1] "+" us (ClassB_l1_thread_fp_intensity):(ClassB_thread_fp_performance) with points lc rgb l1_color pt ClassB_point ps point_size notitle,\
-	[0:0:1] "+" us (ClassB_l2_thread_fp_intensity):(ClassB_thread_fp_performance) with points lc rgb l2_color pt ClassB_point ps point_size notitle,\
-	[0:0:1] "+" us (ClassB_hbm_thread_fp_intensity):(ClassB_thread_fp_performance) with points lc rgb hbm_color pt ClassB_point ps point_size notitle,\
-	[0:0:1] "+" us (ClassC_l1_thread_fp_intensity):(ClassC_thread_fp_performance) with points lc rgb l1_color pt ClassC_point ps point_size notitle,\
-	[0:0:1] "+" us (ClassC_l2_thread_fp_intensity):(ClassC_thread_fp_performance) with points lc rgb l2_color pt ClassC_point ps point_size notitle,\
-	[0:0:1] "+" us (ClassC_hbm_thread_fp_intensity):(ClassC_thread_fp_performance) with points lc rgb hbm_color pt ClassC_point ps point_size notitle
+	{% for kernel in kernels %}
+	{{ kernel.warp_instruction_performance }} dashtype 2 lc rgb 'black' lw 2 notitle,\
+	[0:0:1] "+" us (0.012):({{ kernel.warp_instruction_performance }}) \
+		with points lc rgb 'black' pt {{ kernel.name }}_dot - 1 ps point_size title "{{ kernel.name }}",\
+	{% endfor %}
+	{% for kernel in kernels %}
+	[0:0:1] "+" us ({{ kernel.l1_thread_inst_intensity }}):({{ kernel.thread_instruction_performance }}) \
+	    with points lc rgb l1_color pt {{ kernel.name }}_dot ps point_size \
+		{{ 'title "L1 (tot\\\_inst)"' if loop.first else "notitle" }},\
+	[0:0:1] "+" us ({{ kernel.l2_thread_inst_intensity }}):({{ kernel.thread_instruction_performance }}) \
+	    with points lc rgb l2_color pt {{ kernel.name }}_dot ps point_size \
+		{{ 'title "L2 (tot\\\_inst)"' if loop.first else "notitle" }},\
+	[0:0:1] "+" us ({{ kernel.hbm_thread_inst_intensity }}):({{ kernel.thread_instruction_performance }}) \
+	    with points lc rgb hbm_color pt {{ kernel.name }}_dot ps point_size \
+		{{ 'title "HBM (tot\\\_inst)"' if loop.first else "notitle" }}{% if not loop.last %},\
+		{% endif %}
+	{% endfor %}

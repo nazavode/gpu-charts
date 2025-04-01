@@ -5,8 +5,9 @@ import sys
 import argparse
 import statistics
 import math
-import logging as log
+import json
 from collections import defaultdict
+from jinja2 import Environment, FileSystemLoader
 
 
 def elapsed_s(d):
@@ -204,6 +205,26 @@ def performance(d):
     return {"flops": flop(d) / (elapsed_s(d) * 1000000000)}
 
 
+def roofline(d):
+    return {
+        "warp_instruction_performance": warp_instructions(d) / (elapsed_s(d) * 10**9),
+        "thread_instruction_performance": thread_instructions(d)
+        / (elapsed_s(d) * 10**9),
+        "l1_thread_inst_intensity": thread_instructions(d)
+        / l1_total_32B_transactions(d),
+        "l2_thread_inst_intensity": thread_instructions(d) / l2_transactions(d),
+        "hbm_thread_inst_intensity": thread_instructions(d) / dram_transactions(d),
+        "thread_fp_performance": flop(d) / (elapsed_s(d) * 10**9),
+        "l1_thread_fp_intensity": flop(d) / l1_bytes(d),
+        "l2_thread_fp_intensity": flop(d) / l2_bytes(d),
+        "hbm_thread_fp_intensity": flop(d) / dram_bytes(d),
+        # "warp_shared_instruction_performance": warp_shared_ld_st_instructions(d)
+        # / (elapsed_s(d) * 10**9),
+        # "shared_warp_inst_intensity": warp_shared_ld_st_instructions(d)
+        # / l1_shared_transactions(d),
+    }
+
+
 def canonicalize(d):
     return {
         # Timing
@@ -239,6 +260,8 @@ def canonicalize(d):
         **efficiency(d),
         # Performance
         **performance(d),
+        # Instruction roofline plots
+        **roofline(d),
     }
 
 
@@ -254,16 +277,16 @@ def accumulate(d):
     return {k: mean(v) for k, v in d.items()}
 
 
-def transform(f, kernels=None):
-    r = csv.DictReader(f, delimiter=",", quotechar='"')
-    d = defaultdict(list)
+def group_by(r, kernels=None):
+    data = defaultdict(list)
     for row in r:
-        if kernels and not any(k in row["Kernel Name"] for k in kernels):
+        groups = [k for k in kernels if k in row["Kernel Name"]]
+        assert len(groups) <= 1
+        if not groups:
             continue
-        k = row["Metric Name"]
-        v = float(row["Metric Value"].replace(",", ""))
-        d[k].append(v)
-    return canonicalize(accumulate(d))
+        group = groups[0]
+        data[group].append(row)
+    return data
 
 
 if __name__ == "__main__":
@@ -273,20 +296,47 @@ if __name__ == "__main__":
     parser.add_argument(
         "--template",
         "-t",
-        type=argparse.FileType("r"),
         default=None,
         help="Template file containing a python format string to be instantiated with resulting values",
     )
     parser.add_argument(
-        "--kernels",
-        nargs="+",
-        type=str,
-        help="List of kernels to be taken into account; if not specified, all kernels are considered",
+        "--kernel",
+        action="append",
+        help="List of kernels to be taken into account; if not specified, average values across all kernels are emitted",
     )
+
     args = parser.parse_args()
-    data = transform(sys.stdin, kernels=args.kernels)
-    if args.template:
-        template = args.template.read()
-        print(template.format(**data))
+
+    r = csv.DictReader(sys.stdin, delimiter=",", quotechar='"')
+
+    kernels = None
+    if args.kernel:
+        kernels = [s.strip() for s in args.kernel if s.strip()]
+
+    if kernels:
+        data = group_by(r, kernels=kernels)
     else:
-        print("\n".join(f"{k} = {v}" for k, v in data.items()))
+        data = {"all": r}
+
+    metrics = {}
+    for kernel, rows in data.items():
+        d = defaultdict(list)
+        for row in rows:
+            k = row["Metric Name"]
+            v = float(row["Metric Value"].replace(",", ""))
+            d[k].append(v)
+        metrics[kernel] = d
+
+    result = {
+        kernel: {"name": kernel, **canonicalize(accumulate(data))}
+        for kernel, data in metrics.items()
+    }
+
+    if args.template:
+        env = Environment(
+            loader=FileSystemLoader("."), lstrip_blocks=True, trim_blocks=True
+        )
+        template = env.get_template(args.template)
+        print(template.render(kernels=result.values()))
+    else:
+        json.dump(result, sys.stdout, indent=4)
