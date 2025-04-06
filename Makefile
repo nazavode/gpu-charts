@@ -9,14 +9,14 @@ KERNEL_ARGS := $(patsubst %, --kernel=% , $(KERNELS))
 %.csv: %.ncu
 	$(AWK) '/^==PROF==/ {last=NR} {lines[NR]=$$0} END {for (i=last+1; i<=NR; i++) print lines[i]}' $< > $@
 
-%.roofline-fp.plt: %.csv roofline-fp.plt.jinja ncu2gnuplot.py
-	./ncu2gnuplot.py $(KERNEL_ARGS) --template=./roofline-fp.plt.jinja < $< > $@
+define ROOFLINE_RULE
+%.roofline-$(1).plt: %.csv roofline-$(1).plt.jinja ncu2gnuplot.py
+	./ncu2gnuplot.py $(KERNEL_ARGS) --template=./roofline-$(1).plt.jinja < $$< > $$@
+endef
 
-%.roofline-inst.plt: %.csv roofline-inst.plt.jinja ncu2gnuplot.py
-	./ncu2gnuplot.py $(KERNEL_ARGS) --template=./roofline-inst.plt.jinja < $< > $@
-
-%.roofline-shared.plt: %.csv roofline-shared.plt.jinja ncu2gnuplot.py
-	./ncu2gnuplot.py $(KERNEL_ARGS) --template=./roofline-shared.plt.jinja < $< > $@
+$(eval $(call ROOFLINE_RULE,fp))
+$(eval $(call ROOFLINE_RULE,inst))
+$(eval $(call ROOFLINE_RULE,shared))
 
 %.ps: %.plt
 	$(GNUPLOT) -e "outfile='$@'" $<

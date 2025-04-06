@@ -3,7 +3,7 @@
 ### 1. Collect performance metrics with `ncu`
 
 ```
-$ ncu $(./ncu-args.sh) mytest.x > mytest.ncu
+$ ncu $(./ncu-args.sh) myapp.x > myapp.ncu
 ```
 
 ### 2. Generate charts
@@ -12,22 +12,22 @@ Make sure the `.ncu` results file is in the root of the repository:
 
 ```
 $ ls -1 *.ncu
-mytest.ncu
+myapp.ncu
 ```
 
 You can generate a chart for each type by using proper `make` targets:
 
 ```
-$ make mytest.roofline-fp.pdf
-$ make mytest.roofline-inst.pdf
-$ make mytest.roofline-shared.pdf
+$ make myapp.roofline-fp.pdf
+$ make myapp.roofline-inst.pdf
+$ make myapp.roofline-shared.pdf
 ```
 
 The previous commands generate charts considering the geometric average of *all* kernels in the profiling data.
 To select and plot specific kernels:
 
 ```
-$ make ... KERNELS="kernel1 kernel2"
+$ make ... KERNELS="KernelA KernelB"
 ```
 
 ## Available charts
@@ -46,7 +46,7 @@ All roofline charts are inspired by:
 
 ## 3. Shared Memory Roofline
 
-*Work in progress.*
+![Shared memory roofline](img/roofline-shared.png)
 
 ## 4. Instruction Mix
 

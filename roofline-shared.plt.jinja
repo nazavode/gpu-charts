@@ -154,5 +154,6 @@ plot \
     {% for kernel in kernels %}
 	[0:0:1] "+" us ({{ kernel.shared_warp_inst_intensity }}):({{ kernel.warp_shared_instruction_performance }})\
 	    with points lc rgb shared_color pt {{ kernel.name }}_dot ps point_size\
-		title {{ '"Shared (ldst\\\_inst)"' if loop.first else "notitle" }}{% if not loop.last %},\{% endif %}
+		{{ 'title "Shared (ldst\\\_inst)"' if loop.first else "notitle" }}{% if not loop.last %},\
+		{% endif %}
 	{% endfor %}

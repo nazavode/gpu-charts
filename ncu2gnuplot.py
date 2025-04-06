@@ -6,15 +6,22 @@ import argparse
 import statistics
 import math
 import json
+from typing import TypeAlias, Iterable, List
 from collections import defaultdict
 from jinja2 import Environment, FileSystemLoader
 
+Metrics: TypeAlias = dict[str, float]
 
-def elapsed_s(d):
+#
+# Derived metrics
+#
+
+
+def elapsed_s(d: Metrics) -> float:
     return d["sm__cycles_elapsed.avg"] / float(d["sm__cycles_elapsed.avg.per_second"])
 
 
-def scalar_flop(d):
+def scalar_flop(d: Metrics) -> float:
     return (
         2 * d["sm__sass_thread_inst_executed_op_dfma_pred_on.sum"]
         + d["sm__sass_thread_inst_executed_op_dmul_pred_on.sum"]
@@ -28,33 +35,33 @@ def scalar_flop(d):
     )
 
 
-def tensor_flop(d):
+def tensor_flop(d: Metrics) -> float:
     return 512 * d["sm__inst_executed_pipe_tensor.sum"]
 
 
-def flop(d):
+def flop(d: Metrics) -> float:
     return scalar_flop(d) + tensor_flop(d)
 
 
-def thread_instructions(d):
+def thread_instructions(d: Metrics) -> float:
     return d["smsp__thread_inst_executed.sum"] / 32.0
 
 
-def l1_global_transactions(d):
+def l1_global_transactions(d: Metrics) -> float:
     return (
         d["l1tex__t_sectors_pipe_lsu_mem_global_op_ld.sum"]
         + d["l1tex__t_sectors_pipe_lsu_mem_global_op_st.sum"]
     )
 
 
-def l1_shared_transactions(d):
+def l1_shared_transactions(d: Metrics) -> float:
     return (
         d["l1tex__data_pipe_lsu_wavefronts_mem_shared_op_ld.sum"]
         + d["l1tex__data_pipe_lsu_wavefronts_mem_shared_op_st.sum"]
     )
 
 
-def l2_transactions(d):
+def l2_transactions(d: Metrics) -> float:
     return (
         d["lts__t_sectors_op_read.sum"]
         + d["lts__t_sectors_op_atom.sum"] * 2
@@ -63,42 +70,42 @@ def l2_transactions(d):
     )
 
 
-def dram_transactions(d):
+def dram_transactions(d: Metrics) -> float:
     return d["dram__sectors_read.sum"] + d["dram__sectors_write.sum"]
 
 
-def warp_instructions(d):
+def warp_instructions(d: Metrics) -> float:
     return d["smsp__inst_executed.sum"]
 
 
-def l1_total_32B_transactions(d):
+def l1_total_32B_transactions(d: Metrics) -> float:
     return l1_global_transactions(d) + 4 * l1_shared_transactions(d)
 
 
-def warp_global_ld_st_instructions(d):
+def warp_global_ld_st_instructions(d: Metrics) -> float:
     return d["smsp__inst_executed_op_global_ld.sum"]
 
 
-def warp_shared_ld_st_instructions(d):
+def warp_shared_ld_st_instructions(d: Metrics) -> float:
     return (
         d["smsp__inst_executed_op_shared_ld.sum"]
         + d["smsp__inst_executed_op_shared_st.sum"]
     )
 
 
-def dram_bytes(d):
+def dram_bytes(d: Metrics) -> float:
     return d["dram__bytes.sum"]
 
 
-def l2_bytes(d):
+def l2_bytes(d: Metrics) -> float:
     return d["lts__t_bytes.sum"]
 
 
-def l1_bytes(d):
+def l1_bytes(d: Metrics) -> float:
     return d["l1tex__t_bytes.sum"]
 
 
-def fp_instructions(d):
+def fp_instructions(d: Metrics) -> float:
     return (
         d["sm__sass_thread_inst_executed_op_dfma_pred_on.sum"]
         + d["sm__sass_thread_inst_executed_op_dmul_pred_on.sum"]
@@ -113,23 +120,23 @@ def fp_instructions(d):
     )
 
 
-def int_instructions(d):
+def int_instructions(d: Metrics) -> float:
     return d["sm__sass_thread_inst_executed_op_integer_pred_on.sum"]
 
 
-def cf_instructions(d):
+def cf_instructions(d: Metrics) -> float:
     return d["sm__sass_thread_inst_executed_op_control_pred_on.sum"]
 
 
-def threadcomm_instructions(d):
+def threadcomm_instructions(d: Metrics) -> float:
     return d["sm__sass_thread_inst_executed_op_inter_thread_communication_pred_on.sum"]
 
 
-def mem_instructions(d):
+def mem_instructions(d: Metrics) -> float:
     return d["sm__sass_thread_inst_executed_op_memory_pred_on.sum"]
 
 
-def misc_instructions(d):
+def misc_instructions(d: Metrics) -> float:
     return (
         d["sm__sass_thread_inst_executed_op_bit_pred_on.sum"]
         + d["sm__sass_thread_inst_executed_op_conversion_pred_on.sum"]
@@ -137,7 +144,7 @@ def misc_instructions(d):
     )
 
 
-def tot_instructions(d):
+def tot_instructions(d: Metrics) -> float:
     return (
         fp_instructions(d)
         + int_instructions(d)
@@ -148,7 +155,12 @@ def tot_instructions(d):
     )
 
 
-def instmix_pct(d):
+#
+# Charts
+#
+
+
+def instmix_pct(d: Metrics) -> Metrics:
     tot = tot_instructions(d)
     keys = [
         "fp_instructions_pct",
@@ -176,7 +188,7 @@ def instmix_pct(d):
     return {keys[i]: integral[i] for i in range(len(keys))}
 
 
-def instmix(d):
+def instmix(d: Metrics) -> Metrics:
     return {
         "fp_instructions": fp_instructions(d),
         "int_instructions": int_instructions(d),
@@ -188,7 +200,7 @@ def instmix(d):
     }
 
 
-def occupancy(d):
+def occupancy(d: Metrics) -> Metrics:
     peak = d["sm__maximum_warps_per_active_cycle_pct"]
     sustained = d["sm__warps_active.avg.pct_of_peak_sustained_active"]
     return {
@@ -197,15 +209,15 @@ def occupancy(d):
     }
 
 
-def efficiency(d):
+def efficiency(d: Metrics) -> Metrics:
     return {"efficiency": thread_instructions(d) / warp_instructions(d) * 100}
 
 
-def performance(d):
-    return {"flops": flop(d) / (elapsed_s(d) * 1000000000)}
+def performance(d: Metrics) -> Metrics:
+    return {"flops": flop(d) / (elapsed_s(d) * 10**9)}
 
 
-def roofline(d):
+def roofline(d: Metrics) -> Metrics:
     return {
         "warp_instruction_performance": warp_instructions(d) / (elapsed_s(d) * 10**9),
         "thread_instruction_performance": thread_instructions(d)
@@ -218,14 +230,14 @@ def roofline(d):
         "l1_thread_fp_intensity": flop(d) / l1_bytes(d),
         "l2_thread_fp_intensity": flop(d) / l2_bytes(d),
         "hbm_thread_fp_intensity": flop(d) / dram_bytes(d),
-        # "warp_shared_instruction_performance": warp_shared_ld_st_instructions(d)
-        # / (elapsed_s(d) * 10**9),
-        # "shared_warp_inst_intensity": warp_shared_ld_st_instructions(d)
-        # / l1_shared_transactions(d),
+        "warp_shared_instruction_performance": warp_shared_ld_st_instructions(d)
+        / (elapsed_s(d) * 10**9),
+        "shared_warp_inst_intensity": warp_shared_ld_st_instructions(d)
+        / l1_shared_transactions(d),
     }
 
 
-def canonicalize(d):
+def canonicalize(d: Metrics) -> Metrics:
     return {
         # Timing
         "elapsed_s": elapsed_s(d),
@@ -265,7 +277,7 @@ def canonicalize(d):
     }
 
 
-def mean(data):
+def mean(data: Iterable[float]) -> float:
     try:
         return statistics.geometric_mean(data)
     except statistics.StatisticsError:
@@ -273,11 +285,11 @@ def mean(data):
         return 0.0
 
 
-def accumulate(d):
+def accumulate(d: dict[str, list[float]]) -> Metrics:
     return {k: mean(v) for k, v in d.items()}
 
 
-def group_by(r, kernels=None):
+def group_by(r: csv.DictReader, kernels: List[str]):
     data = defaultdict(list)
     for row in r:
         groups = [k for k in kernels if k in row["Kernel Name"]]
@@ -291,18 +303,18 @@ def group_by(r, kernels=None):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
-        description="Generate gnuplot data file from an NVIDIA Nsight profiler CSV file. Reads the CSV from stdin and writes the result to stdout."
+        description="Generate gnuplot data file from an NVIDIA Nsight profiler (ncu) CSV output. Reads the ncu output from stdin and writes the result to stdout."
     )
     parser.add_argument(
         "--template",
         "-t",
         default=None,
-        help="Template file containing a python format string to be instantiated with resulting values",
+        help="Jinja2 template file to be instantiated with result metrics.",
     )
     parser.add_argument(
         "--kernel",
         action="append",
-        help="List of kernels to be taken into account; if not specified, average values across all kernels are emitted",
+        help="List of kernels to be taken into account; if not specified, average values across all kernels are emitted.",
     )
 
     args = parser.parse_args()
