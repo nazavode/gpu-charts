@@ -54,7 +54,7 @@ All roofline charts are inspired by:
 
 ## 4. Instruction Mix
 
-*Work in progress.*
+![SM Occupancy](img/hist-instmix.png)
 
 ## 5. Occupancy
 

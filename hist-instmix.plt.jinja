@@ -1,0 +1,56 @@
+if (!exists("outfile")) outfile='hist-instmix.ps'
+set term postscript solid color rounded
+set output outfile
+
+set key invert reverse left outside
+# set key autotitle columnheader
+# set key maxrows 1
+# set nokey
+set grid y
+set style data histograms
+set style histogram rowstacked
+set style fill solid 1.0 border -1
+set ytics 10 nomirror
+set yrange [:100]
+set ylabel "% of overall instructions"
+set ytics 10
+set auto x
+# unset xtics
+# set xtics nomirror rotate by -45 scale 0
+
+plot '-' using 2:xtic(1) t "misc", \
+     '-' using 2:xtic(1) t "comm", \
+     '-' using 2:xtic(1) t "cf", \
+     '-' using 2:xtic(1) t "mem", \
+     '-' using 2:xtic(1) t "int", \
+     '-' using 2:xtic(1) t "fp"
+# misc
+{% for kernel in kernels %}
+"{{ kernel.name }}" {{ kernel.misc_instructions_pct }}
+{% endfor %}
+e
+# comm
+{% for kernel in kernels %}
+"{{ kernel.name }}" {{ kernel.threadcomm_instructions_pct }}
+{% endfor %}
+e
+# cf
+{% for kernel in kernels %}
+"{{ kernel.name }}" {{ kernel.cf_instructions_pct }}
+{% endfor %}
+e
+# mem
+{% for kernel in kernels %}
+"{{ kernel.name }}" {{ kernel.mem_instructions_pct }}
+{% endfor %}
+e
+# int
+{% for kernel in kernels %}
+"{{ kernel.name }}" {{ kernel.int_instructions_pct }}
+{% endfor %}
+e
+# fp
+{% for kernel in kernels %}
+"{{ kernel.name }}" {{ kernel.fp_instructions_pct }}
+{% endfor %}
+e
