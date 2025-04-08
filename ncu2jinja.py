@@ -303,13 +303,13 @@ def group_by(r: csv.DictReader, kernels: List[str]):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
-        description="Generate gnuplot data file from an NVIDIA Nsight profiler (ncu) CSV output. Reads the ncu output from stdin and writes the result to stdout."
+        description="Instantiate Jinja template files from an NVIDIA Nsight profiler (ncu) CSV output. Reads the ncu output from stdin and writes the result to stdout."
     )
     parser.add_argument(
         "--template",
         "-t",
         default=None,
-        help="Jinja2 template file to be instantiated with result metrics.",
+        help="Jinja2 template file to be instantiated with result metrics; if not specified, emits the contents from the resulting Jinja environment",
     )
     parser.add_argument(
         "--kernel",

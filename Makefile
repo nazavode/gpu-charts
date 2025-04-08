@@ -10,8 +10,8 @@ KERNEL_ARGS := $(patsubst %, --kernel=% , $(KERNELS))
 	$(AWK) '/^==PROF==/ {last=NR} {lines[NR]=$$0} END {for (i=last+1; i<=NR; i++) print lines[i]}' $< > $@
 
 define PLOT_RULE
-%.$(1).plt: %.csv $(1).plt.jinja ncu2gnuplot.py
-	./ncu2gnuplot.py $(KERNEL_ARGS) --template=./$(1).plt.jinja < $$< > $$@
+%.$(1).plt: %.csv $(1).plt.jinja ncu2jinja.py
+	./ncu2jinja.py $(KERNEL_ARGS) --template=./$(1).plt.jinja < $$< > $$@
 endef
 
 $(eval $(call PLOT_RULE,roofline-fp))
