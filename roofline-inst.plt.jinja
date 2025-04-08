@@ -110,18 +110,16 @@ set loadpath
 set fit noerrorvariables
 
 # Device parameters: NVIDIA V100
-peak = 80 * 32 * 2 * 1.53 # GFLOP/s
-peak_nofma = peak / 2 # GFLOP/s
-l1_peak = 437.5 * 32 # GB/s
-l2_peak = 93.6 * 32 # GB/s
-hbm_peak = 25.9 * 32 # GB/s
+peak = 489.6 # GIPS
+l1_peak = 437.5 # GTXN/s
+l2_peak = 93.6 # GTXN/s
+hbm_peak = 25.9 # GTXN/s
 
 # Ceilings
 l1_ceiling(x) = peak > (x * l1_peak) ? (x * l1_peak) : peak
 l2_ceiling(x) = peak > (x * l2_peak) ? (x * l2_peak) : peak
 hbm_ceiling(x) = peak > (x * hbm_peak) ? (x * hbm_peak) : peak
 peak_ceiling(x) = peak <= (x * l1_peak) ? peak : 1/0
-peak_nofma_ceiling(x) = peak_nofma <= (x * l1_peak) ? peak_nofma : 1/0
 
 # Styling
 line_width = 2
@@ -149,10 +147,9 @@ plot \
 	l2_ceiling(x) lw line_width lc rgb l2_color notitle,\
 	hbm_ceiling(x) lw line_width lc rgb hbm_color notitle,\
 	peak_ceiling(x) lw line_width lc rgb 'black' notitle,\
-	{% for kernel in kernels %}
-	{{ kernel.warp_instruction_performance }} dashtype 2 lc rgb 'black' lw 2 notitle,\
-	[0:0:1] "+" us (0.012):({{ kernel.warp_instruction_performance }}) \
-		with points lc rgb 'black' pt {{ kernel.name }}_dot - 1 ps point_size title "{{ kernel.name }}",\
+    {% for kernel in kernels %}
+	[0:0:1] "+" us (-10):(-10) \
+		with points lc rgb "black" pt {{ kernel.name }}_dot - 1 ps point_size title "{{ kernel.name }}",\
 	{% endfor %}
 	{% for kernel in kernels %}
 	[0:0:1] "+" us ({{ kernel.l1_thread_inst_intensity }}):({{ kernel.thread_instruction_performance }}) \
