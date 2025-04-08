@@ -1,8 +1,10 @@
 # gpu-charts
 
-Utilities to generate fancy profiling plots for CUDA kernels by parsing output from [NVIDIA Nsight compute CLI](https://docs.nvidia.com/nsight-compute/NsightComputeCli/index.html).
+Generate unnecessarily fancy profiling plots for CUDA kernels by parsing output from [NVIDIA Nsight compute CLI](https://docs.nvidia.com/nsight-compute/NsightComputeCli/index.html).
 
-> Note: architectural limits are currently specified for NVIDIA V100 GPUs. Automatic parametrization of plots is not currently supported. You can adapt plots for your favorite GPU by editing values labeled as `Device parameters` in `.jinja` files.
+> Note: architectural limits are currently specified for NVIDIA V100 GPUs. Automatic parametrization of plots is not currently supported. You can adapt plots to your favorite GPU by editing values labeled as `Device parameters` in `.jinja` files.
+
+## Getting Started
 
 ### 1. Collect performance metrics with `ncu`
 
@@ -25,6 +27,8 @@ You can generate a chart for each type by using proper `make` targets:
 $ make myapp.roofline-fp.pdf
 $ make myapp.roofline-inst.pdf
 $ make myapp.roofline-shared.pdf
+$ make myapp.hist-instmix.pdf
+$ make myapp.hist-occupancy.pdf
 ```
 
 The previous commands generate charts considering the geometric average of *all* kernels in the profiling data.
@@ -54,7 +58,7 @@ All roofline charts are inspired by:
 
 ## 4. Instruction Mix
 
-![SM Occupancy](img/hist-instmix.png)
+![Instruction mix](img/hist-instmix.png)
 
 ## 5. Occupancy
 
