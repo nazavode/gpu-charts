@@ -1,0 +1,24 @@
+if (!exists("outfile")) outfile='hist-occupancy.ps'
+set term postscript solid color rounded
+set output outfile
+
+set key invert reverse
+set grid y
+set style data histograms
+set style histogram rowstacked
+set style fill solid 1.0 border -1
+set ytics 10 nomirror
+set yrange [0:100]
+set ylabel "Occupancy %"
+set auto x
+
+plot '-' using 2:xtic(1) t "Sustained", \
+     '-' using 2:xtic(1) t "Peak"
+{% for kernel in kernels %}
+"{{ kernel.name }}" {{ kernel.sustained_occupancy_pct }}
+{% endfor %}
+e
+{% for kernel in kernels %}
+"{{ kernel.name }}" {{ kernel.peak_occupancy_margin_pct }}
+{% endfor %}
+e
