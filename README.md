@@ -47,22 +47,32 @@ All roofline charts are inspired by:
 
 > N. Ding and S. Williams, “An Instruction Roofline Model for GPUs,” in 2019 IEEE/ACM Performance Modeling, Benchmarking and Simulation of High Performance Computer Systems (PMBS), Denver, CO, USA: IEEE, Nov. 2019, pp. 7–18. doi: 10.1109/PMBS49563.2019.00007.
 
-## 1. Instruction Roofline
+## Instruction Roofline
+
+`make` target: `<basename>.roofline-inst.pdf`
 
 ![Instruction roofline](img/roofline-inst.png)
 
-## 2. Floating Point Instruction Roofline
+## Floating Point Instruction Roofline
+
+`make` target: `<basename>.roofline-fp.pdf`
 
 ![Floating point instruction roofline](img/roofline-fp.png)
 
-## 3. Shared Memory Roofline
+## Shared Memory Roofline
+
+`make` target: `<basename>.roofline-shared.pdf`
 
 ![Shared memory roofline](img/roofline-shared.png)
 
-## 4. Instruction Mix
+## Instruction Mix Histogram
+
+`make` target: `<basename>.hist-instmix.pdf`
 
 ![Instruction mix](img/hist-instmix.png)
 
-## 5. Occupancy
+## Occupancy Histogram
+
+`make` target: `<basename>.hist-occupancy.pdf`
 
 ![SM Occupancy](img/hist-occupancy.png)
