@@ -41,6 +41,8 @@ $ make ... KERNELS="KernelA KernelB"
 
 Only kernels whose declaration contains at least one of the strings in `KERNELS` will be included in plots.
 
+> Note: `gnuplot` scripts are sometimes picky about the `gnuplot` running them; the currently tested version is `gnuplot 6.0 patchlevel 2`.
+
 ## Available charts
 
 All roofline charts are inspired by:
