@@ -323,7 +323,6 @@ if __name__ == "__main__":
 
     df["identifier"] = df["name"].apply(normalize_identifier)
 
-    kernels = None
     if args.kernel:
         kernels = [s.strip() for s in args.kernel if s.strip()]
         df = df[df["name"].apply(lambda x: any(sub in x for sub in kernels))]
