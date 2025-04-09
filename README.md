@@ -31,12 +31,15 @@ $ make myapp.hist-instmix.pdf
 $ make myapp.hist-occupancy.pdf
 ```
 
-The previous commands generate charts considering the geometric average of *all* kernels in the profiling data.
-To select and plot specific kernels:
+The previous commands generate charts considering *all* kernels in the profiling data.
+This can be confusing when the `ncu` output comes from a real-world application with tens of kernels.
+To select and plot only specific kernels:
 
 ```
 $ make ... KERNELS="KernelA KernelB"
 ```
+
+Only kernels whose declaration contains at least one of the strings in `KERNELS` will be included in plots.
 
 ## Available charts
 
