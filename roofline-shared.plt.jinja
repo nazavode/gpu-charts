@@ -140,7 +140,7 @@ set label '32-way bank conflict' at fullconflict-0.005,1 left rotate by 90 textc
 # Define dot shapes for each kernel
 {% set shape = namespace(value=5) %}
 {% for kernel in kernels %}
-{{ kernel.name }}_dot = {{ shape.value }}
+{{ kernel.identifier }}_dot = {{ shape.value }}
 {% set shape.value = shape.value + 2 %}
 {% endfor %}
 
@@ -149,11 +149,11 @@ plot \
 	peak_ceiling(x) lw line_width lc rgb 'black' notitle,\
 	{% for kernel in kernels %}
 	[0:0:1] "+" us (-10):(-10)\
-		with points lc rgb "black" pt {{ kernel.name }}_dot - 1 ps point_size title "{{ kernel.name }}",\
+		with points lc rgb "black" pt {{ kernel.identifier }}_dot - 1 ps point_size title "{{ kernel.name }}",\
 	{% endfor %}
     {% for kernel in kernels %}
 	[0:0:1] "+" us ({{ kernel.shared_warp_inst_intensity }}):({{ kernel.warp_shared_instruction_performance }})\
-	    with points lc rgb shared_color pt {{ kernel.name }}_dot ps point_size\
+	    with points lc rgb shared_color pt {{ kernel.identifier }}_dot ps point_size\
 		{{ 'title "Shared (ldst\\\_inst)"' if loop.first else "notitle" }}{% if not loop.last %},\
 		{% endif %}
 	{% endfor %}

@@ -141,7 +141,7 @@ set label sprintf('HBM %.1f GB/s', hbm_peak)  at 0.05,5 + 0.05 * hbm_peak left r
 # Define dot shapes for each kernel
 {% set shape = namespace(value=5) %}
 {% for kernel in kernels %}
-{{ kernel.name }}_dot = {{ shape.value }}
+{{ kernel.identifier }}_dot = {{ shape.value }}
 {% set shape.value = shape.value + 2 %}
 {% endfor %}
 
@@ -153,17 +153,17 @@ plot \
 	peak_nofma_ceiling(x) lw line_width lc rgb 'black' dashtype 2 notitle,\
 	{% for kernel in kernels %}
 	[0:0:1] "+" us (-10):(-10) \
-		with points lc rgb "black" pt {{ kernel.name }}_dot - 1 ps point_size title "{{ kernel.name }}",\
+		with points lc rgb "black" pt {{ kernel.identifier }}_dot - 1 ps point_size title "{{ kernel.name }}",\
 	{% endfor %}
 	{% for kernel in kernels %}
 	[0:0:1] "+" us ({{ kernel.l1_thread_fp_intensity }}):({{ kernel.thread_fp_performance }}) \
-	    with points lc rgb l1_color pt {{ kernel.name }}_dot ps point_size \
+	    with points lc rgb l1_color pt {{ kernel.identifier }}_dot ps point_size \
 		{{ 'title "L1"' if loop.first else "notitle" }},\
 	[0:0:1] "+" us ({{ kernel.l2_thread_fp_intensity }}):({{ kernel.thread_fp_performance }}) \
-	    with points lc rgb l2_color pt {{ kernel.name }}_dot ps point_size \
+	    with points lc rgb l2_color pt {{ kernel.identifier }}_dot ps point_size \
 		{{ 'title "L2"' if loop.first else "notitle" }},\
 	[0:0:1] "+" us ({{ kernel.hbm_thread_fp_intensity }}):({{ kernel.thread_fp_performance }}) \
-	    with points lc rgb hbm_color pt {{ kernel.name }}_dot ps point_size \
+	    with points lc rgb hbm_color pt {{ kernel.identifier }}_dot ps point_size \
 		{{ 'title "HBM"' if loop.first else "notitle" }}{% if not loop.last %},\
 		{% endif %}
 	{% endfor %}

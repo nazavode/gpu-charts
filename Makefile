@@ -19,6 +19,7 @@ $(eval $(call PLOT_RULE,roofline-inst))
 $(eval $(call PLOT_RULE,roofline-shared))
 $(eval $(call PLOT_RULE,hist-occupancy))
 $(eval $(call PLOT_RULE,hist-instmix))
+$(eval $(call PLOT_RULE,hist-predication))
 
 %.ps: %.plt
 	$(GNUPLOT) -e "outfile='$@'" $<

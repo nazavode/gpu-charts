@@ -29,6 +29,7 @@ $ make myapp.roofline-inst.pdf
 $ make myapp.roofline-shared.pdf
 $ make myapp.hist-instmix.pdf
 $ make myapp.hist-occupancy.pdf
+$ make myapp.hist-predication.pdf
 ```
 
 The previous commands generate charts considering *all* kernels in the profiling data.
@@ -78,3 +79,9 @@ All roofline charts are inspired by:
 `make` target: `<basename>.hist-occupancy.pdf`
 
 ![SM Occupancy](img/hist-occupancy.png)
+
+## Thread Efficiency/Predication Histogram
+
+`make` target: `<basename>.hist-predication.pdf`
+
+![Thread predication](img/hist-predication.png)
